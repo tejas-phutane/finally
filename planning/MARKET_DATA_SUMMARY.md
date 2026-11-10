@@ -1,3 +1,5 @@
+> **Update:** Massive support has been removed. The default source is now Yahoo Finance (`yahoo_client.py`, via yfinance); `MARKET_DATA_PROVIDER=simulator` selects the GBM simulator. The sections below describe the original build.
+
 # Market Data Backend — Summary
 
 **Status:** Complete, tested, reviewed, all issues resolved.
