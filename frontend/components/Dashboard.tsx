@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { CandleChart } from "./CandleChart";
 import { ChatPanel } from "./ChatPanel";
 import { Header } from "./Header";
 import { Heatmap } from "./Heatmap";
@@ -8,12 +9,14 @@ import { LineChart } from "./LineChart";
 import { PanelTitle, Watchlist } from "./Watchlist";
 import { PositionsTable } from "./PositionsTable";
 import { TradeBar } from "./TradeBar";
+import { useCandles } from "@/hooks/useCandles";
 import { useChat } from "@/hooks/useChat";
 import { usePortfolio } from "@/hooks/usePortfolio";
 import { usePriceStream } from "@/hooks/usePriceStream";
 import { useWatchlist } from "@/hooks/useWatchlist";
-import { snapshotsToLinePoints, toLinePoints } from "@/lib/chart";
+import { snapshotsToLinePoints } from "@/lib/chart";
 import { formatPercent, formatPrice, pnlClass } from "@/lib/format";
+import { marketState } from "@/lib/market";
 import { computeLivePortfolio } from "@/lib/portfolio";
 
 export function Dashboard() {
@@ -42,10 +45,28 @@ export function Dashboard() {
 
   const activeItem = items.find((i) => i.ticker === activeTicker);
   const activePrice = activeTicker ? (prices[activeTicker]?.price ?? activeItem?.price ?? null) : null;
-  const mainPoints = useMemo(
-    () => (activeTicker ? toLinePoints(history[activeTicker] ?? []) : []),
-    [history, activeTicker],
+  // Newest price timestamp across tickers drives the LIVE / LAST DATA badge.
+  const latestTs = useMemo(
+    () =>
+      Object.values(prices).reduce<number | null>(
+        (max, p) => (max == null || p.timestamp > max ? p.timestamp : max),
+        null,
+      ),
+    [prices],
   );
+  const [nowSec, setNowSec] = useState(() => Date.now() / 1000);
+  useEffect(() => {
+    const id = setInterval(() => setNowSec(Date.now() / 1000), 15_000);
+    return () => clearInterval(id);
+  }, []);
+  const market = marketState(latestTs, nowSec);
+
+  // The newest tick for the selected ticker extends its current candle.
+  const tick = useMemo(() => {
+    const p = activeTicker ? prices[activeTicker] : undefined;
+    return p ? { time: p.timestamp, price: p.price } : null;
+  }, [prices, activeTicker]);
+  const candles = useCandles(activeTicker, tick);
   const pnlPoints = useMemo(() => snapshotsToLinePoints(pnlHistory), [pnlHistory]);
 
   return (
@@ -54,6 +75,8 @@ export function Dashboard() {
         totalValue={live?.total_value ?? null}
         cash={portfolio?.cash_balance ?? null}
         status={status}
+        market={market}
+        lastTs={latestTs}
       />
       {apiError && (
         <div className="bg-down/20 px-4 py-1 text-xs text-down">{apiError}</div>
@@ -85,12 +108,7 @@ export function Dashboard() {
             </div>
             <div className="min-h-0 flex-1">
               {activeTicker && (
-                <LineChart
-                  data={mainPoints}
-                  color="#ecad0a"
-                  testId="main-chart"
-                  ticker={activeTicker}
-                />
+                <CandleChart candles={candles} testId="main-chart" ticker={activeTicker} />
               )}
             </div>
           </section>

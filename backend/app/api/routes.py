@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+import re
 from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException, Request
@@ -11,6 +13,7 @@ from app import db
 from app.api import ops
 from app.api.ops import WatchlistError
 from app.llm import client as llm_client
+from app.market.history import INTERVAL_PERIOD, fetch_candles
 from app.portfolio import TradeError, execute_trade, get_portfolio
 
 router = APIRouter(prefix="/api")
@@ -99,6 +102,21 @@ async def remove_watchlist(ticker: str, request: Request) -> list[dict[str, Any]
 
 
 # ---- Chat ------------------------------------------------------------------
+
+
+@router.get("/market/candles")
+async def market_candles(ticker: str, interval: str = "1m") -> dict[str, Any]:
+    """Recent OHLC candles for one ticker (Yahoo via yfinance). Oldest first."""
+    symbol = ticker.strip().upper()
+    if not re.fullmatch(r"[A-Z]{1,10}", symbol):
+        raise HTTPException(status_code=400, detail="invalid ticker")
+    if interval not in INTERVAL_PERIOD:
+        raise HTTPException(status_code=400, detail="interval must be 1m or 5m")
+    try:
+        candles = await asyncio.to_thread(fetch_candles, symbol, interval)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"candle fetch failed: {e}") from e
+    return {"ticker": symbol, "interval": interval, "candles": candles}
 
 
 @router.get("/chat/history")

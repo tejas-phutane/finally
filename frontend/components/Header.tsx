@@ -1,4 +1,5 @@
 import type { ConnectionStatus } from "@/hooks/usePriceStream";
+import type { MarketState } from "@/lib/market";
 import { formatMoney } from "@/lib/format";
 
 const DOT: Record<ConnectionStatus, string> = {
@@ -7,8 +8,26 @@ const DOT: Record<ConnectionStatus, string> = {
   disconnected: "bg-down",
 };
 
+const MARKET_DOT: Record<MarketState, string> = {
+  live: "bg-up",
+  last: "bg-accent",
+  none: "bg-muted",
+};
+
+function marketLabel(market: MarketState, lastTs: number | null): string {
+  if (market === "live") return "MARKET LIVE";
+  if (market === "none" || lastTs == null) return "NO DATA";
+  const when = new Date(lastTs * 1000).toLocaleString([], {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `LAST DATA · ${when}`;
+}
+
 const LABEL: Record<ConnectionStatus, string> = {
-  connected: "Live",
+  connected: "Connected",
   reconnecting: "Reconnecting",
   disconnected: "Disconnected",
 };
@@ -17,10 +36,14 @@ export function Header({
   totalValue,
   cash,
   status,
+  market,
+  lastTs,
 }: {
   totalValue: number | null;
   cash: number | null;
   status: ConnectionStatus;
+  market: MarketState;
+  lastTs: number | null;
 }) {
   return (
     <header className="flex items-center justify-between border-b border-border bg-panel px-4 py-2">
@@ -40,6 +63,10 @@ export function Header({
           <span data-testid="cash-balance" className="font-mono tabular-nums">
             {cash == null ? "—" : formatMoney(cash)}
           </span>
+        </div>
+        <div className="flex items-center gap-2" data-testid="market-status" data-state={market}>
+          <span className={`inline-block h-2.5 w-2.5 rounded-full ${MARKET_DOT[market]}`} aria-hidden="true" />
+          <span className="text-xs font-semibold text-muted">{marketLabel(market, lastTs)}</span>
         </div>
         <div className="flex items-center gap-2" data-testid="connection-status" data-status={status}>
           <span className={`inline-block h-2.5 w-2.5 rounded-full ${DOT[status]}`} aria-hidden="true" />
