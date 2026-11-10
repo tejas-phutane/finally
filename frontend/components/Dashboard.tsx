@@ -1,12 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CandleChart } from "./CandleChart";
+import { RangeSelector, StyleSelector } from "./ChartControls";
 import { ChatPanel } from "./ChatPanel";
 import { Header } from "./Header";
 import { Heatmap } from "./Heatmap";
 import { LineChart } from "./LineChart";
 import { PanelTitle, Watchlist } from "./Watchlist";
+import { PriceChart } from "./PriceChart";
 import { PositionsTable } from "./PositionsTable";
 import { TradeBar } from "./TradeBar";
 import { useCandles } from "@/hooks/useCandles";
@@ -17,6 +18,7 @@ import { useWatchlist } from "@/hooks/useWatchlist";
 import { snapshotsToLinePoints } from "@/lib/chart";
 import { formatPercent, formatPrice, pnlClass } from "@/lib/format";
 import { marketState } from "@/lib/market";
+import type { ChartStyle, RangeKey } from "@/lib/ranges";
 import { computeLivePortfolio } from "@/lib/portfolio";
 
 export function Dashboard() {
@@ -26,6 +28,8 @@ export function Dashboard() {
   const { items, error: watchlistError, add, remove, refresh: refreshWatchlist } = useWatchlist();
   const [selected, setSelected] = useState<string | null>(null);
   const [chatOpen, setChatOpen] = useState(true);
+  const [range, setRange] = useState<RangeKey>("1D");
+  const [chartStyle, setChartStyle] = useState<ChartStyle>("candle");
 
   // After any trade or chat action, refresh server-side state.
   const refreshAll = useCallback(() => {
@@ -66,7 +70,7 @@ export function Dashboard() {
     const p = activeTicker ? prices[activeTicker] : undefined;
     return p ? { time: p.timestamp, price: p.price } : null;
   }, [prices, activeTicker]);
-  const candles = useCandles(activeTicker, tick);
+  const { candles } = useCandles(activeTicker, range, tick);
   const pnlPoints = useMemo(() => snapshotsToLinePoints(pnlHistory), [pnlHistory]);
 
   return (
@@ -97,7 +101,7 @@ export function Dashboard() {
           />
         </div>
 
-        <main className="flex min-h-0 flex-col">
+        <main className="flex min-h-0 min-w-0 flex-col">
           <section className="flex h-[42%] min-h-0 flex-col border-b border-border">
             <div className="flex items-baseline gap-3 border-b border-border px-3 py-1.5">
               <span className="font-semibold">{activeTicker ?? "—"}</span>
@@ -105,10 +109,19 @@ export function Dashboard() {
               <span className={`font-mono text-sm tabular-nums ${pnlClass(activeItem?.day_change_percent)}`}>
                 {formatPercent(activeItem?.day_change_percent)}
               </span>
+              <div className="ml-auto flex items-center gap-2">
+                <RangeSelector value={range} onChange={setRange} />
+                <StyleSelector value={chartStyle} onChange={setChartStyle} />
+              </div>
             </div>
             <div className="min-h-0 flex-1">
               {activeTicker && (
-                <CandleChart candles={candles} testId="main-chart" ticker={activeTicker} />
+                <PriceChart
+                  candles={candles}
+                  style={chartStyle}
+                  testId="main-chart"
+                  ticker={activeTicker}
+                />
               )}
             </div>
           </section>

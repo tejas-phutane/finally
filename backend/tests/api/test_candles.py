@@ -18,26 +18,26 @@ def client(tmp_path, monkeypatch):
 def test_returns_candles_shape(client, monkeypatch):
     calls = []
 
-    def fake(ticker, interval):
-        calls.append((ticker, interval))
+    def fake(ticker, range_key):
+        calls.append((ticker, range_key))
         return [{"time": 1, "open": 1.0, "high": 2.0, "low": 0.5, "close": 1.5, "volume": 10.0}]
 
     monkeypatch.setattr("app.api.routes.fetch_candles", fake)
-    r = client.get("/api/market/candles", params={"ticker": "aapl", "interval": "5m"})
+    r = client.get("/api/market/candles", params={"ticker": "aapl", "range": "5D"})
     assert r.status_code == 200
-    assert calls == [("AAPL", "5m")]
+    assert calls == [("AAPL", "5D")]
     body = r.json()
-    assert body["ticker"] == "AAPL" and body["interval"] == "5m"
+    assert body["ticker"] == "AAPL" and body["range"] == "5D" and body["interval"] == "5m"
     assert body["candles"][0]["close"] == 1.5
 
 
-def test_default_interval_is_1m(client, monkeypatch):
+def test_default_range_is_1d(client, monkeypatch):
     seen = {}
     monkeypatch.setattr(
-        "app.api.routes.fetch_candles", lambda t, i: seen.update(interval=i) or []
+        "app.api.routes.fetch_candles", lambda t, r: seen.update(range=r) or []
     )
     r = client.get("/api/market/candles", params={"ticker": "MSFT"})
-    assert r.status_code == 200 and seen["interval"] == "1m"
+    assert r.status_code == 200 and seen["range"] == "1D"
 
 
 @pytest.mark.parametrize("ticker", ["", "AAPL1", "A-B", "TOOLONGTICKERX"])
@@ -46,8 +46,8 @@ def test_invalid_ticker_is_400(client, ticker):
     assert r.status_code == 400
 
 
-def test_invalid_interval_is_400(client):
-    r = client.get("/api/market/candles", params={"ticker": "AAPL", "interval": "1h"})
+def test_invalid_range_is_400(client):
+    r = client.get("/api/market/candles", params={"ticker": "AAPL", "range": "2W"})
     assert r.status_code == 400
 
 

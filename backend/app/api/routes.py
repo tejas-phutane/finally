@@ -13,7 +13,7 @@ from app import db
 from app.api import ops
 from app.api.ops import WatchlistError
 from app.llm import client as llm_client
-from app.market.history import INTERVAL_PERIOD, fetch_candles
+from app.market.history import RANGES, fetch_candles, range_interval
 from app.portfolio import TradeError, execute_trade, get_portfolio
 
 router = APIRouter(prefix="/api")
@@ -105,18 +105,23 @@ async def remove_watchlist(ticker: str, request: Request) -> list[dict[str, Any]
 
 
 @router.get("/market/candles")
-async def market_candles(ticker: str, interval: str = "1m") -> dict[str, Any]:
-    """Recent OHLC candles for one ticker (Yahoo via yfinance). Oldest first."""
+async def market_candles(ticker: str, range: str = "1D") -> dict[str, Any]:
+    """OHLC candles for one ticker over a range (Yahoo via yfinance). Oldest first."""
     symbol = ticker.strip().upper()
     if not re.fullmatch(r"[A-Z]{1,10}", symbol):
         raise HTTPException(status_code=400, detail="invalid ticker")
-    if interval not in INTERVAL_PERIOD:
-        raise HTTPException(status_code=400, detail="interval must be 1m or 5m")
+    if range not in RANGES:
+        raise HTTPException(status_code=400, detail=f"range must be one of {', '.join(RANGES)}")
     try:
-        candles = await asyncio.to_thread(fetch_candles, symbol, interval)
+        candles = await asyncio.to_thread(fetch_candles, symbol, range)
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"candle fetch failed: {e}") from e
-    return {"ticker": symbol, "interval": interval, "candles": candles}
+    return {
+        "ticker": symbol,
+        "range": range,
+        "interval": range_interval(range),
+        "candles": candles,
+    }
 
 
 @router.get("/chat/history")

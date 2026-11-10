@@ -15,14 +15,14 @@ export interface Tick {
 const BAR_SECONDS = 60;
 
 /**
- * Fold one live tick into 1-minute candles. Pure.
+ * Fold one live tick into candles of `barSec` seconds. Pure.
  * - same minute as the last candle: update its high/low/close
  * - a later minute: open a new candle at the previous close
  * - an older tick (out of order): ignored
  * Keeps times strictly ascending, which Lightweight Charts requires.
  */
-export function applyTick(candles: Candle[], tick: Tick): Candle[] {
-  const bucket = Math.floor(tick.time / BAR_SECONDS) * BAR_SECONDS;
+export function applyTick(candles: Candle[], tick: Tick, barSec = BAR_SECONDS): Candle[] {
+  const bucket = Math.floor(tick.time / barSec) * barSec;
   const p = tick.price;
   if (candles.length === 0) {
     return [{ time: bucket, open: p, high: p, low: p, close: p, volume: 0 }];

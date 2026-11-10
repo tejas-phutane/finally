@@ -26,7 +26,7 @@ def test_parses_ohlcv_oldest_first():
         ]
     )
     with patch("app.market.history.yf.download", return_value=frame):
-        candles = fetch_candles("AAPL", "1m")
+        candles = fetch_candles("AAPL", "1D")
 
     assert [c["close"] for c in candles] == [100.5, 101.5]
     first = candles[0]
@@ -44,15 +44,23 @@ def test_skips_rows_without_close():
         ]
     )
     with patch("app.market.history.yf.download", return_value=frame):
-        candles = fetch_candles("AAPL", "1m")
+        candles = fetch_candles("AAPL", "1D")
     assert [c["close"] for c in candles] == [101.5]
 
 
 def test_empty_frame_returns_empty_list():
     with patch("app.market.history.yf.download", return_value=pd.DataFrame()):
-        assert fetch_candles("AAPL", "1m") == []
+        assert fetch_candles("AAPL", "1D") == []
 
 
-def test_rejects_unsupported_interval():
-    with pytest.raises(ValueError, match="unsupported interval"):
-        fetch_candles("AAPL", "1h")
+def test_passes_period_and_interval_for_range():
+    frame = _frame([("2026-11-09 10:00", 1.0, 1.0, 1.0, 1.0, 1)])
+    with patch("app.market.history.yf.download", return_value=frame) as dl:
+        fetch_candles("AAPL", "1Y")
+    assert dl.call_args.kwargs["period"] == "1y"
+    assert dl.call_args.kwargs["interval"] == "1d"
+
+
+def test_rejects_unsupported_range():
+    with pytest.raises(ValueError, match="unsupported range"):
+        fetch_candles("AAPL", "2W")

@@ -40,9 +40,9 @@ export const api = {
   getPortfolio: () => request<Portfolio>("/api/portfolio"),
 
   getPortfolioHistory: () => request<PortfolioSnapshot[]>("/api/portfolio/history"),
-  getCandles: (ticker: string, interval = "1m") =>
-    request<{ ticker: string; interval: string; candles: Candle[] }>(
-      `/api/market/candles?ticker=${encodeURIComponent(ticker)}&interval=${interval}`,
+  getCandles: (ticker: string, range: string) =>
+    request<{ ticker: string; range: string; interval: string; candles: Candle[] }>(
+      `/api/market/candles?ticker=${encodeURIComponent(ticker)}&range=${range}`,
     ),
 
   trade: (ticker: string, quantity: number, side: "buy" | "sell") =>
