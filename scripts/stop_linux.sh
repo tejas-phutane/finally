@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Stop and remove the FinAlly container (macOS / Linux).
+# Stop and remove the FinAlly container (Linux).
 # The data volume 'finally-data' is kept, so portfolio data persists.
 # Idempotent: exits 0 if the container does not exist.
 

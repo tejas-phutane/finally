@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Start FinAlly in Docker (macOS / Linux).
+# Start FinAlly in Docker (Linux).
 #
-# Usage: scripts/start_mac.sh [--build] [--open]
+# Usage: scripts/start_linux.sh [--build] [--open]
 #   --build  rebuild the image before starting
 #   --open   open the app in the default browser once it responds
 #
@@ -84,8 +84,8 @@ done
 if [ "${READY:-0}" -eq 1 ]; then
   echo "FinAlly is ready at ${URL}"
   if [ "${OPEN}" -eq 1 ]; then
-    if command -v open >/dev/null 2>&1; then open "${URL}"
-    elif command -v xdg-open >/dev/null 2>&1; then xdg-open "${URL}" >/dev/null 2>&1 || true
+    if command -v xdg-open >/dev/null 2>&1; then
+      xdg-open "${URL}" >/dev/null 2>&1 || true
     fi
   fi
 else

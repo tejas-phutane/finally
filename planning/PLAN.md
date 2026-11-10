@@ -93,10 +93,8 @@ finally/
 │   ├── PLAN.md               # This document
 │   └── ...                   # Additional agent reference docs
 ├── scripts/
-│   ├── start_mac.sh          # Launch Docker container (macOS/Linux)
-│   ├── stop_mac.sh           # Stop Docker container (macOS/Linux)
-│   ├── start_windows.ps1     # Launch Docker container (Windows PowerShell)
-│   └── stop_windows.ps1      # Stop Docker container (Windows PowerShell)
+│   ├── start_linux.sh        # Launch Docker container (Linux)
+│   └── stop_linux.sh         # Stop Docker container (Linux)
 ├── test/                     # Playwright E2E tests + docker-compose.test.yml
 ├── db/                       # Volume mount target (SQLite file lives here at runtime)
 │   └── .gitkeep              # Directory exists in repo; finally.db is gitignored
@@ -399,17 +397,16 @@ The `db/` directory in the project root maps to `/app/db` in the container. The 
 
 ### Start/Stop Scripts
 
-**`scripts/start_mac.sh`** (macOS/Linux):
+**`scripts/start_linux.sh`** (Linux):
 - Builds the Docker image if not already built (or if `--build` flag passed)
 - Runs the container with the volume mount, port mapping, and `.env` file
 - Prints the URL to access the app
 - Optionally opens the browser
 
-**`scripts/stop_mac.sh`** (macOS/Linux):
+**`scripts/stop_linux.sh`** (Linux):
 - Stops and removes the running container
 - Does NOT remove the volume (data persists)
 
-**`scripts/start_windows.ps1`** / **`scripts/stop_windows.ps1`**: PowerShell equivalents for Windows.
 
 All scripts should be idempotent — safe to run multiple times.
 

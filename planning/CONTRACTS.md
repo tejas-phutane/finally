@@ -168,7 +168,7 @@ async def chat_completion(user_message: str, history: list[dict], portfolio_cont
   sets `FINALLY_DB_PATH=/app/db/finally.db`, `FINALLY_STATIC_DIR=/app/static`, exposes 8000,
   CMD `uvicorn app.main:app --host 0.0.0.0 --port 8000` (from `/app/backend`).
 - Run: `docker run -v finally-data:/app/db -p 8000:8000 --env-file .env finally`.
-- Scripts `scripts/start_mac.sh`, `stop_mac.sh`, `start_windows.ps1`, `stop_windows.ps1`: idempotent,
+- Scripts `scripts/start_linux.sh` and `scripts/stop_linux.sh` (Linux only): idempotent,
   `--build` flag rebuilds, do not remove the volume.
 
 ## Integration tests (`test/`) — Integration Tester
