@@ -1,0 +1,17 @@
+# Optional convenience wrapper. The scripts in scripts/ are the primary entry point.
+#   docker compose up -d --build
+#   docker compose down        (keeps the finally-data volume)
+services:
+  app:
+    build: .
+    image: finally
+    container_name: finally-app
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - finally-data:/app/db
+
+volumes:
+  finally-data:

@@ -1,0 +1,56 @@
+# E2E test stack for FinAlly.
+#
+# Run from the project root:
+#   docker compose -f test/docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from playwright
+#   docker compose -f test/docker-compose.test.yml down -v
+#
+# The app uses a tmpfs for /app/db so every run starts with a fresh SQLite database.
+name: finally-e2e
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: finally-e2e-app
+    env_file:
+      - ../.env
+    environment:
+      LLM_MOCK: "true"
+      MARKET_DATA_PROVIDER: simulator
+      FINALLY_DB_PATH: /app/db/finally.db
+    # Chromium fails with ERR_SSL_PROTOCOL_ERROR on the single-label name 'app',
+    # so the Playwright container reaches the app via a dotted alias.
+    networks:
+      default:
+        aliases:
+          - app.e2e.test
+    ports:
+      - "8000:8000"
+    tmpfs:
+      # Owned by the image's non-root user (uid 1000) so SQLite can create finally.db.
+      - /app/db:uid=1000,gid=1000,mode=0755
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health', timeout=3)"
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 5s
+
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.65.0-noble
+    working_dir: /work
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      BASE_URL: http://app.e2e.test:8000
+      CI: "1"
+    volumes:
+      - ./:/work
+    # Install the project's pinned @playwright/test, then run the specs.
+    command: sh -c "npm ci --no-audit --no-fund && npx playwright test"

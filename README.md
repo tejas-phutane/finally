@@ -21,7 +21,7 @@ Single Docker container serving everything on port 8000:
 - **Backend**: FastAPI (Python/uv) with SSE streaming
 - **Database**: SQLite with lazy initialization
 - **AI**: LiteLLM → OpenRouter (Cerebras inference) with structured outputs
-- **Market data**: Built-in GBM simulator (default) or Massive API (optional)
+- **Market data**: Yahoo Finance via yfinance (default) or built-in GBM simulator
 
 ## Quick Start
 
@@ -42,7 +42,7 @@ docker run -v finally-data:/app/db -p 8000:8000 --env-file .env finally
 | Variable | Required | Description |
 |---|---|---|
 | `OPENROUTER_API_KEY` | Yes | OpenRouter API key for AI chat |
-| `MASSIVE_API_KEY` | No | Massive (Polygon.io) key for real market data; omit to use simulator |
+| `MARKET_DATA_PROVIDER` | No | `yahoo` (default, yfinance) or `simulator` |
 | `LLM_MOCK` | No | Set `true` for deterministic mock LLM responses (testing) |
 
 ## Project Structure

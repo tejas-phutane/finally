@@ -1,0 +1,47 @@
+# Keep the build context small and free of local state and secrets.
+
+# Dependencies and caches
+**/node_modules
+**/.venv
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+**/.ruff_cache
+**/.mypy_cache
+**/.coverage
+**/htmlcov
+
+# Frontend build output (rebuilt inside the image)
+frontend/out
+frontend/.next
+
+# Test artifacts
+test
+**/test-results
+**/playwright-report
+**/coverage
+
+# Runtime data: never bake a local database into the image
+db/*.db
+db/*.db-journal
+db/*.db-wal
+db/*.db-shm
+
+# Secrets: pass at runtime via --env-file, never into the image
+.env
+.env.*
+!.env.example
+
+# Version control, editor, and planning files
+.git
+.github
+.gitignore
+.vscode
+.claude
+.sprite
+.DS_Store
+planning
+scripts
+docker-compose.yml
+Dockerfile
+.dockerignore

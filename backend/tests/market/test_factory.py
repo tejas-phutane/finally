@@ -3,77 +3,44 @@
 import os
 from unittest.mock import patch
 
+import pytest
+
 from app.market.cache import PriceCache
 from app.market.factory import create_market_data_source
-from app.market.massive_client import MassiveDataSource
 from app.market.simulator import SimulatorDataSource
+from app.market.yahoo_client import YahooDataSource
 
 
 class TestFactory:
     """Tests for create_market_data_source factory."""
 
-    def test_creates_simulator_when_no_api_key(self):
-        """Test that simulator is created when MASSIVE_API_KEY is not set."""
-        cache = PriceCache()
-
+    def test_defaults_to_yahoo(self):
         with patch.dict(os.environ, {}, clear=True):
-            source = create_market_data_source(cache)
+            source = create_market_data_source(PriceCache())
+        assert isinstance(source, YahooDataSource)
 
+    def test_empty_provider_defaults_to_yahoo(self):
+        with patch.dict(os.environ, {"MARKET_DATA_PROVIDER": "  "}, clear=True):
+            source = create_market_data_source(PriceCache())
+        assert isinstance(source, YahooDataSource)
+
+    def test_simulator_provider(self):
+        with patch.dict(os.environ, {"MARKET_DATA_PROVIDER": "simulator"}, clear=True):
+            source = create_market_data_source(PriceCache())
         assert isinstance(source, SimulatorDataSource)
 
-    def test_creates_simulator_when_api_key_empty(self):
-        """Test that simulator is created when MASSIVE_API_KEY is empty."""
-        cache = PriceCache()
-
-        with patch.dict(os.environ, {"MASSIVE_API_KEY": ""}, clear=True):
-            source = create_market_data_source(cache)
-
+    def test_provider_name_is_case_insensitive(self):
+        with patch.dict(os.environ, {"MARKET_DATA_PROVIDER": "SIMULATOR"}, clear=True):
+            source = create_market_data_source(PriceCache())
         assert isinstance(source, SimulatorDataSource)
 
-    def test_creates_simulator_when_api_key_whitespace(self):
-        """Test that simulator is created when MASSIVE_API_KEY is whitespace."""
+    def test_unknown_provider_raises(self):
+        with patch.dict(os.environ, {"MARKET_DATA_PROVIDER": "bloomberg"}, clear=True):
+            with pytest.raises(ValueError, match="Unknown MARKET_DATA_PROVIDER"):
+                create_market_data_source(PriceCache())
+
+    def test_source_receives_cache(self):
         cache = PriceCache()
-
-        with patch.dict(os.environ, {"MASSIVE_API_KEY": "   "}, clear=True):
+        with patch.dict(os.environ, {"MARKET_DATA_PROVIDER": "simulator"}, clear=True):
             source = create_market_data_source(cache)
-
-        assert isinstance(source, SimulatorDataSource)
-
-    def test_creates_massive_when_api_key_set(self):
-        """Test that Massive client is created when MASSIVE_API_KEY is set."""
-        cache = PriceCache()
-
-        with patch.dict(os.environ, {"MASSIVE_API_KEY": "test-key"}, clear=True):
-            source = create_market_data_source(cache)
-
-        assert isinstance(source, MassiveDataSource)
-
-    def test_massive_receives_api_key(self):
-        """Test that Massive client receives the API key."""
-        cache = PriceCache()
-
-        with patch.dict(os.environ, {"MASSIVE_API_KEY": "test-key-123"}, clear=True):
-            source = create_market_data_source(cache)
-
-        assert isinstance(source, MassiveDataSource)
-        assert source._api_key == "test-key-123"
-
-    def test_simulator_receives_cache(self):
-        """Test that simulator receives the cache reference."""
-        cache = PriceCache()
-
-        with patch.dict(os.environ, {}, clear=True):
-            source = create_market_data_source(cache)
-
-        assert isinstance(source, SimulatorDataSource)
-        assert source._cache is cache
-
-    def test_massive_receives_cache(self):
-        """Test that Massive client receives the cache reference."""
-        cache = PriceCache()
-
-        with patch.dict(os.environ, {"MASSIVE_API_KEY": "test-key"}, clear=True):
-            source = create_market_data_source(cache)
-
-        assert isinstance(source, MassiveDataSource)
         assert source._cache is cache
