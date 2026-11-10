@@ -211,3 +211,6 @@ db/*.db
 db/*.db-journal
 db/*.db-wal
 db/*.db-shm
+
+# Frontend helper modules live in frontend/lib (the rule above is for Python lib/)
+!frontend/lib/
